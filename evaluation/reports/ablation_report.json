@@ -1,0 +1,22 @@
+{
+  "eval_set_size": 7,
+  "k": 5,
+  "results": {
+    "BM25": {
+      "recall@5": 0.7619,
+      "mrr": 0.7857,
+      "ndcg@5": 0.7286,
+      "num_queries": 7
+    },
+    "Hybrid(BM25+Dense+RRF)": {
+      "recall@5": 1.0,
+      "mrr": 0.7857,
+      "ndcg@5": 0.8408,
+      "num_queries": 7
+    }
+  },
+  "delta": {
+    "recall@5": 0.2381,
+    "mrr": 0.0
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "data_stats": {
+    "raw_notes": 1048,
+    "cleaned_notes": 58,
+    "chunks": 125,
+    "categories": {
+      "其他": 7,
+      "数码3C": 51
+    }
+  },
+  "eval_set_size": 116,
+  "k": 10,
+  "results": {
+    "BM25": {
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "ndcg@10": 1.0,
+      "num_queries": 116
+    },
+    "Hybrid(BM25+Dense+RRF)": {
+      "recall@10": 1.0,
+      "mrr": 0.6818,
+      "ndcg@10": 0.7635,
+      "num_queries": 116
+    }
+  },
+  "delta": {
+    "recall@10": 0.0
+  },
+  "note": "Dense 检索暂用随机向量，接入 bge-m3 后数字会更准确"
+}
