@@ -8,10 +8,6 @@
 本质：把对话历史（messages）存在内存里，
 每轮对话都能看到之前说过的内容。
 
-面试话术:
-    "短期记忆用 LangGraph 的 MemorySaver 实现，
-     每个 session_id 对应独立的对话上下文，
-     支持多轮对话中的指代消解。"
 """
 
 from langgraph.checkpoint.memory import MemorySaver

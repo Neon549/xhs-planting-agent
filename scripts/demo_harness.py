@@ -13,7 +13,6 @@ Harness 验证 Demo
 ==================
 用一个 EchoAgent 测试 Tracer + Budget + ToolRegistry 全流程。
 
-运行: uv run python scripts/demo_harness.py
 不需要 API key, 纯本地 mock 验证。
 """
 

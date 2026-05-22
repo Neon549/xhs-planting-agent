@@ -11,9 +11,6 @@ Trace 日志模块
 
 对标: smolagents/monitoring.py
 
-面试话术:
-    "Harness 层内置 Trace 模块, 每次请求自动记录全链路日志,
-     包括每个 Agent 的输入输出、耗时、Token 消耗, 支持事后分析和调试。"
 """
 
 import json

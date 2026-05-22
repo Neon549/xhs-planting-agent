@@ -5,10 +5,6 @@ Recommender Agent
 =================
 综合分析干净 chunks，生成最终推荐。
 
-面试话术:
-    "Recommender 把检索结果、软广过滤结果、用户画像
-     三路信息整合，生成带证据链的推荐报告，
-     每条推荐都能追溯到具体笔记来源。"
 """
 
 from loguru import logger

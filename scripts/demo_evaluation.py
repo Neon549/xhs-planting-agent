@@ -13,7 +13,6 @@
 =================
 用 mock 数据跑完整的评估流程，生成对比报告。
 
-运行: uv run python scripts/demo_evaluation.py
 """
 
 import json

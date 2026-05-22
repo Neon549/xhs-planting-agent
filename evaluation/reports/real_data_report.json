@@ -19,8 +19,8 @@
     },
     "Hybrid(BM25+Dense+RRF)": {
       "recall@10": 1.0,
-      "mrr": 0.6818,
-      "ndcg@10": 0.7635,
+      "mrr": 0.6856,
+      "ndcg@10": 0.7663,
       "num_queries": 116
     }
   },

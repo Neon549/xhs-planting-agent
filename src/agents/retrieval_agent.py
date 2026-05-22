@@ -5,10 +5,6 @@ Retrieval Agent
 ===============
 调用 HybridRetriever，召回相关笔记 chunks。
 
-面试话术:
-    "RetrievalAgent 封装了三阶段混合检索，
-     对外只暴露一个 search 接口，
-     内部 BM25+Dense+RRF+Reranker 的复杂性对其他 Agent 透明。"
 """
 
 from loguru import logger

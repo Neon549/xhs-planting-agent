@@ -13,9 +13,6 @@ Token 预算控制模块
 对标: smolagents 的 max_steps 机制（限制步数间接控制 token）
 我们更细: 直接按 token 数 + 调用次数双重控制。
 
-面试话术:
-    "Harness 实现了 Token 预算管理, 每个请求有独立预算,
-     接近上限时自动降级 (qwen-plus → qwen-turbo), 避免成本失控。"
 """
 
 from dataclasses import dataclass, field

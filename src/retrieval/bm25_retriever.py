@@ -13,9 +13,6 @@ BM25 是 TF-IDF 的改进版：
 对标: Elasticsearch 默认的打分算法就是 BM25。
 实现: 用 rank_bm25 库（纯 Python，无需服务）。
 
-面试话术:
-    "BM25 负责关键词精确召回，弥补向量检索在精确型号、
-     专有名词上的不足（例如 'iPhone 16 Pro Max 256GB'）。"
 """
 
 import jieba

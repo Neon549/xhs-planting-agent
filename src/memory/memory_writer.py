@@ -8,11 +8,6 @@
 核心思路：用 LLM 读对话历史，提取结构化信息 + 语义偏好，
 然后分别写入 SQLite 和 Milvus。
 
-面试话术:
-    "会话结束后触发 MemoryWriter，用 LLM 从对话中
-     抽取用户偏好（肤质、预算、风格描述），
-     结构化字段入 SQLite，语义描述 embedding 后入 Milvus，
-     实现跨会话个性化。"
 """
 
 import json

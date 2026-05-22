@@ -8,10 +8,6 @@ MediaCrawler 封装
 MediaCrawler 是独立项目，不集成到本项目里，
 我们只负责读取它输出的 JSON/JSONL 文件。
 
-使用流程:
-    1. 在 MediaCrawler 目录下跑爬虫，数据落地到它自己的 data/ 目录
-    2. 把爬取的文件复制到本项目的 data/raw/ 目录
-    3. 调用 load_raw_data() 读取，传给 cleaner.py 处理
 """
 
 import json

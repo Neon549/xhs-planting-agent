@@ -3,7 +3,6 @@
 ===============
 MediaCrawler 数据 → 清洗 → Chunking → 入 Milvus → 重跑评估
 
-运行: uv run python scripts/crawl_data.py
 """
 
 import json

@@ -11,10 +11,6 @@ Embedding 模型选型: bge-m3（BAAI/bge-m3）
     - 在 MTEB 排行榜上中文效果最好的开源模型之一
     - 支持最长 8192 token（小红书笔记完全够用）
 
-面试话术:
-    "Embedding 用 bge-m3，支持中英文，1024 维，
-     在 CMTEB 中文检索榜上表现优秀。为了加速，
-     chunk 入库时预计算向量，查询时只算 query 向量。"
 """
 
 from loguru import logger

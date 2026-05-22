@@ -10,7 +10,6 @@
 """
 """
 双层记忆验证 Demo
-运行: uv run python scripts/demo_memory.py
 """
 
 import json
