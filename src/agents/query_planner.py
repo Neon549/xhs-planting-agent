@@ -14,10 +14,6 @@ Query Planner Agent
     "requirements": ["适合油痘肌", "平价"]
 }
 
-面试话术:
-    "QueryPlanner 把模糊的自然语言转成结构化参数，
-     一方面用于 BM25 的关键词提取，
-     另一方面用于 Milvus 的标量过滤（按品类/价格筛选）。"
 """
 
 import json

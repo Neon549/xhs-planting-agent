@@ -83,6 +83,8 @@ class MilvusStore:
         return inserted
 
     def search(self, query_embedding: list[float], top_k: int = 10, filter_expr: str | None = None) -> list[dict]:
+        self.client.load_collection(COLLECTION_NAME)
+
         kwargs = dict(
             collection_name=COLLECTION_NAME,
             data=[query_embedding],

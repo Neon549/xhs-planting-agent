@@ -16,7 +16,6 @@ Hybrid Retrieval 验证 Demo
 不下载大模型（用随机向量代替 Dense，跳过 Reranker）。
 等真实数据和模型就位后，只需替换组件即可。
 
-运行: uv run python scripts/demo_hybrid_retrieval.py
 """
 
 import json

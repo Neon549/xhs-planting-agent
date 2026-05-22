@@ -18,11 +18,6 @@ LangGraph 主工作流
       ↓
     END
 
-面试话术:
-    "用 LangGraph 的 StateGraph 编排 4 个 Agent，
-     每个节点只依赖 State，互相解耦。
-     通过 functools.partial 注入依赖（检索器、记忆模块），
-     保持节点函数的纯净性，便于单独测试。"
 """
 
 import functools

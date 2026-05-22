@@ -11,10 +11,6 @@ State 是贯穿所有 Agent 的数据容器。
     - 字段按流程顺序排列（便于理解数据流向）
     - 用 Annotated + operator.add 支持列表的追加合并
 
-面试话术:
-    "State 用 TypedDict 定义，字段按数据流顺序排列，
-     列表字段用 Annotated[list, operator.add] 支持
-     多节点追加而不是覆盖，避免并行节点的数据丢失。"
 """
 
 import operator

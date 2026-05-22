@@ -14,7 +14,6 @@
 把所有模块串起来跑一次端到端测试。
 不需要真实 LLM 和 Embedding 模型。
 
-运行: uv run python scripts/demo_workflow.py
 """
 
 import json

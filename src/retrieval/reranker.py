@@ -16,10 +16,6 @@ Reranker 精排模块
     候选集 2000 条 → Bi-Encoder 粗排 → 候选集 30 条 → Cross-Encoder 精排 → Top-10
     不能对所有 2000 条跑 Cross-Encoder，太慢。
 
-面试话术:
-    "检索分两阶段：Bi-Encoder 粗排（速度快，可预计算向量），
-     Cross-Encoder 精排（精度高，只对候选集 ~30 条调用）。
-     bge-reranker-v2-m3 在 CMTEB 重排序榜上是最优开源模型之一。"
 """
 
 from loguru import logger

@@ -1,0 +1,92 @@
+{
+  "session_id": "91450c819c60",
+  "user_query": "iPhone 16 Pro 值得买吗",
+  "steps": [
+    {
+      "step_id": "9f9d17de",
+      "agent_name": "EchoAgent",
+      "action": "parse_query",
+      "input_data": {
+        "raw_query": "iPhone 16 Pro 值得买吗"
+      },
+      "output_data": {
+        "category": "数码3C",
+        "keywords": "iPhone 16 Pro 值得买吗"
+      },
+      "token_usage": {},
+      "start_time": 1779175874.6130178,
+      "end_time": 1779175874.6139627,
+      "duration_ms": 0.94,
+      "error": null,
+      "metadata": {}
+    },
+    {
+      "step_id": "e146a580",
+      "agent_name": "EchoAgent",
+      "action": "tool:search_notes",
+      "input_data": {
+        "query": "iPhone 16 Pro 值得买吗",
+        "top_k": 3
+      },
+      "output_data": {
+        "success": true,
+        "result": [
+          {
+            "title": "【测评】iPhone 16 Pro 值得买吗真实体验 #1",
+            "score": 0.9
+          },
+          {
+            "title": "【测评】iPhone 16 Pro 值得买吗真实体验 #2",
+            "score": 0.85
+          },
+          {
+            "title": "【测评】iPhone 16 Pro 值得买吗真实体验 #3",
+            "score": 0.8
+          }
+        ]
+      },
+      "token_usage": {},
+      "start_time": 1779175874.6139627,
+      "end_time": 1779175874.6139627,
+      "duration_ms": 0.0,
+      "error": null,
+      "metadata": {}
+    }
+  ],
+  "total_tokens": 0,
+  "total_duration_ms": 0.94,
+  "created_at": "2026-05-19T17:31:14.613017",
+  "final_output": {
+    "agent": "EchoAgent",
+    "parsed_query": {
+      "category": "数码3C",
+      "keywords": "iPhone 16 Pro 值得买吗"
+    },
+    "search_results": {
+      "success": true,
+      "result": [
+        {
+          "title": "【测评】iPhone 16 Pro 值得买吗真实体验 #1",
+          "score": 0.9
+        },
+        {
+          "title": "【测评】iPhone 16 Pro 值得买吗真实体验 #2",
+          "score": 0.85
+        },
+        {
+          "title": "【测评】iPhone 16 Pro 值得买吗真实体验 #3",
+          "score": 0.8
+        }
+      ]
+    },
+    "budget_summary": {
+      "max_tokens": 10000,
+      "used_tokens": 300,
+      "remaining_tokens": 9700,
+      "usage_ratio": 0.03,
+      "num_llm_calls": 1,
+      "max_llm_calls": 5,
+      "status": "proceed"
+    }
+  }
+}

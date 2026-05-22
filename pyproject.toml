@@ -21,7 +21,7 @@ dependencies = [
     "pymilvus[milvus-lite]>=2.4.0",          # Milvus Lite 包含其中
     # 检索 / 重排序
     "rank-bm25>=0.2.2",
-    "FlagEmbedding>=1.2.10",    # bge-reranker-v2-m3
+    "flagembedding>=1.2.10",    # bge-reranker-v2-m3
     "sentence-transformers>=3.0.0",
     # 数据
     "pandas>=2.0.0",

@@ -14,9 +14,6 @@
 对标: smolagents/tools.py 的 Tool 基类
 区别: 我们用更轻量的「函数 + Schema」方式, 不需要类继承。
 
-面试话术:
-    "工具注册中心用 JSON Schema 定义接口, 与 OpenAI function calling
-     格式兼容, 支持运行时动态注册、参数校验和错误包装。"
 """
 
 import json

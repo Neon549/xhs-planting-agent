@@ -16,10 +16,6 @@ RRF（Reciprocal Rank Fusion）公式:
     score(d) = Σ 1/(k + rank_i(d))    k=60（常数，防止排名靠后的文档被过度惩罚）
     两路结果独立排名，融合后综合排名更鲁棒。
 
-面试话术:
-    "我实现了 BM25 + Dense Retrieval + RRF + Reranker 四层检索架构。
-     通过消融实验验证: 单 BM25 Recall@10 约 0.65，
-     加 Dense 混合后提升到 0.78，再加 Reranker 提升到 0.89。"
 """
 
 from loguru import logger
