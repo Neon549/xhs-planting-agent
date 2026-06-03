@@ -1,6 +1,5 @@
-"""全局配置: 模型名、Milvus 地址、API key 等"""
-from pathlib import Path
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,3 +18,36 @@ DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 EVAL_DIR = DATA_DIR / "eval"
+
+# ── 新增：检索配置 ──────────────────────────
+RETRIEVAL = {
+    "bm25_top_k": 20,
+    "dense_top_k": 20,
+    "rrf_k": 60,
+    "final_top_k": 10,
+}
+
+# ── 新增：Reranker 配置 ─────────────────────
+RERANKER = {
+    "provider": "none",  # none / cross_encoder / llm
+    "model": "BAAI/bge-reranker-v2-m3",
+    "top_k": 10,
+    "use_fp16": True,
+}
+
+# ── 新增：Embedding 配置 ────────────────────
+EMBEDDING = {
+    "provider": "bge_m3",  # bge_m3 / openai
+    "model": "BAAI/bge-m3",
+    "use_fp16": True,
+    "batch_size": 16,
+    "max_length": 512,
+}
+
+# ── 新增：向量库配置 ────────────────────────
+VECTOR_STORE = {
+    "provider": "milvus",  # milvus / chroma（以后可扩展）
+    "uri": MILVUS_URI,
+    "collection_name": "xhs_notes",
+    "embedding_dim": 1024,
+}

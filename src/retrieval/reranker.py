@@ -1,107 +1,128 @@
-"""bge-reranker-v2-m3 重排序"""
-# 模块 5 实现
 """
-Reranker 精排模块
-================
-用 Cross-Encoder 对混合召回的候选集重新打分排序。
+Reranker 模块
+=============
+可插拔的重排序组件，支持三种模式：
+    - none：不重排，原样返回
+    - cross_encoder：bge-reranker 本地模型
+    - llm：用 LLM 打分（后续扩展）
 
-模型: bge-reranker-v2-m3（BAAI/bge-reranker-v2-m3）
-原理:
-    Bi-Encoder（Dense 检索）: query 和 doc 各自编码成向量，点积算相似度
-        → 快，可以预计算，但交互信息少
-    Cross-Encoder（Reranker）: [query, doc] 拼接后一起编码，输出相关性分数
-        → 慢，不能预计算，但精度高（直接建模交互）
-
-为什么要两阶段:
-    候选集 2000 条 → Bi-Encoder 粗排 → 候选集 30 条 → Cross-Encoder 精排 → Top-10
-    不能对所有 2000 条跑 Cross-Encoder，太慢。
-
+切换方式：修改 config/settings.py 里的 RERANKER["provider"]
 """
 
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import Any
 from loguru import logger
 
 
-class Reranker:
-    """
-    bge-reranker-v2-m3 精排器。
+# ── 抽象基类 ──────────────────────────────────────────────────────
+class BaseReranker(ABC):
+    """所有 Reranker 的抽象基类，定义统一接口。"""
 
-    用法:
-        reranker = Reranker()
-        reranker.load_model()
+    @abstractmethod
+    def rerank(self, query: str, candidates: list[dict], top_k: int = 10) -> list[dict]:
+        """对候选集精排，返回 Top-K。"""
+        ...
 
-        # 输入: query + 候选 chunks 列表
-        results = reranker.rerank(
-            query="手机推荐",
-            candidates=[{"chunk_id": "...", "text": "...", ...}, ...],
-            top_k=10,
-        )
-    """
+    def validate(self, query: str, candidates: list[dict]) -> None:
+        """输入校验，子类自动继承。"""
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("query 不能为空")
+        if not isinstance(candidates, list) or not candidates:
+            raise ValueError("candidates 不能为空列表")
 
-    def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3"):
+
+# ── 实现 1：不重排 ────────────────────────────────────────────────
+class NoneReranker(BaseReranker):
+    """空对象模式：不重排，原样返回 Top-K。"""
+
+    def rerank(self, query: str, candidates: list[dict], top_k: int = 10) -> list[dict]:
+        self.validate(query, candidates)
+        logger.debug(f"NoneReranker: 跳过重排，返回前 {top_k} 条")
+        return candidates[:top_k]
+
+
+# ── 实现 2：Cross-Encoder 重排 ────────────────────────────────────
+class CrossEncoderReranker(BaseReranker):
+    """bge-reranker-v2-m3 精排。"""
+
+    def __init__(
+        self, model_name: str = "BAAI/bge-reranker-v2-m3", use_fp16: bool = True
+    ):
         self.model_name = model_name
+        self.use_fp16 = use_fp16
         self.model = None
 
-    def load_model(self) -> None:
-        """
-        加载 Reranker 模型。
-
-        bge-reranker-v2-m3 约 1.1GB，比 Embedding 模型小。
-        同样支持 HF_ENDPOINT 镜像加速。
-        """
+    def _load_model(self) -> None:
+        if self.model is not None:
+            return
         from FlagEmbedding import FlagReranker
-        logger.info(f"加载 Reranker 模型: {self.model_name} ...")
-        self.model = FlagReranker(
-            self.model_name,
-            use_fp16=True,
-        )
+
+        logger.info(f"加载 Reranker 模型: {self.model_name}")
+        self.model = FlagReranker(self.model_name, use_fp16=self.use_fp16)
         logger.info("Reranker 模型加载完成")
 
-    def rerank(
-        self,
-        query: str,
-        candidates: list[dict],
-        top_k: int = 10,
-    ) -> list[dict]:
-        """
-        对候选集精排。
+    def rerank(self, query: str, candidates: list[dict], top_k: int = 10) -> list[dict]:
+        self.validate(query, candidates)
+        self._load_model()
 
-        参数:
-            query: 用户查询
-            candidates: 混合召回的候选 chunks
-            top_k: 精排后返回的数量
-
-        返回:
-            精排后的 Top-K chunks，新增 "rerank_score" 字段
-        """
-        if not candidates:
-            return []
-
-        if self.model is None:
-            self.load_model()
-
-        # 构造 (query, doc) 对，这是 Cross-Encoder 的输入格式
-        pairs = [(query, c["text"]) for c in candidates]
-
-        # 计算相关性分数
-        # normalize=True: 把分数归一化到 [0, 1]，便于理解
+        pairs = [(query, c.get("text", "")) for c in candidates]
         scores = self.model.compute_score(pairs, normalize=True)
 
-        # 如果只有一对，compute_score 返回单个 float，统一成列表
         if isinstance(scores, float):
             scores = [scores]
 
-        # 合并分数，排序
         scored = []
         for chunk, score in zip(candidates, scores):
-            chunk_copy = dict(chunk)
-            chunk_copy["rerank_score"] = round(float(score), 4)
-            scored.append(chunk_copy)
+            c = dict(chunk)
+            c["rerank_score"] = round(float(score), 4)
+            scored.append(c)
 
         scored.sort(key=lambda x: x["rerank_score"], reverse=True)
-        top_results = scored[:top_k]
-
         logger.debug(
-            f"Reranker: {len(candidates)} 候选 → Top-{top_k} | "
-            f"最高分: {top_results[0]['rerank_score'] if top_results else 'N/A'}"
+            f"CrossEncoderReranker: {len(candidates)} → Top-{top_k} | 最高分: {scored[0]['rerank_score']}"
         )
-        return top_results
+        return scored[:top_k]
+
+
+# ── 实现 3：LLM 重排（预留，后续扩展）─────────────────────────────
+class LLMReranker(BaseReranker):
+    """用 LLM 打相关性分数重排（待实现）。"""
+
+    def rerank(self, query: str, candidates: list[dict], top_k: int = 10) -> list[dict]:
+        self.validate(query, candidates)
+        logger.warning("LLMReranker 尚未实现，降级到 NoneReranker")
+        return candidates[:top_k]
+
+
+# ── Factory ───────────────────────────────────────────────────────
+def create_reranker(config: dict | None = None) -> BaseReranker:
+    """
+    根据配置创建 Reranker 实例。
+
+    用法:
+        from config.settings import RERANKER
+        from src.retrieval.reranker import create_reranker
+
+        reranker = create_reranker(RERANKER)
+
+    config 示例:
+        {"provider": "cross_encoder", "model": "BAAI/bge-reranker-v2-m3", "top_k": 10}
+    """
+    if config is None:
+        from config.settings import RERANKER
+
+        config = RERANKER
+
+    provider = config.get("provider", "none")
+    logger.info(f"创建 Reranker: provider={provider}")
+
+    if provider == "cross_encoder":
+        return CrossEncoderReranker(
+            model_name=config.get("model", "BAAI/bge-reranker-v2-m3"),
+            use_fp16=config.get("use_fp16", True),
+        )
+    elif provider == "llm":
+        return LLMReranker()
+    else:
+        return NoneReranker()
