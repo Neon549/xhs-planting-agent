@@ -1,0 +1,21 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements-hf.txt .
+RUN pip install --no-cache-dir -r requirements-hf.txt
+
+COPY src/ ./src/
+COPY config/ ./config/
+COPY data/processed/ ./data/processed/
+COPY data/bm25_index.pkl ./data/
+COPY data/milvus_lite.db ./data/
+
+ENV DEPLOY_MODE=hf_api
+ENV PORT=7860
+
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "7860"]

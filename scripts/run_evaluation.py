@@ -1,35 +1,38 @@
-"""一次性脚本: 跑评估"""
-# 模块 8 实现
 """
-真实数据评估
-运行: uv run python scripts/run_evaluation.py
+真实数据完整评估（含 Reranker）
+运行: python scripts/run_evaluation.py
 """
-
 
 import json
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pathlib import Path
 from FlagEmbedding import BGEM3FlagModel, FlagReranker
 from src.retrieval.bm25_retriever import BM25Retriever
-from src.retrieval.milvus_store import MilvusStore
+from src.retrieval.chroma_store import ChromaStore
 from src.retrieval.hybrid_retriever import HybridRetriever, reciprocal_rank_fusion
+from src.retrieval.reranker import CrossEncoderReranker
 from evaluation.retrieval_eval import RetrievalEvaluator
+from config.settings import VECTOR_STORE, EMBEDDING
 from loguru import logger
 
 
 class RealDenseRetriever:
-    """真实 bge-m3 向量检索器。"""
-    def __init__(self, model, store: MilvusStore):
+    def __init__(self, model, store: ChromaStore):
         self.model = model
         self.store = store
 
     def search(self, query: str, top_k: int = 10) -> list[dict]:
         output = self.model.encode(
-            [query], batch_size=1, max_length=512,
-            return_dense=True, return_sparse=False, return_colbert_vecs=False,
+            [query],
+            batch_size=1,
+            max_length=512,
+            return_dense=True,
+            return_sparse=False,
+            return_colbert_vecs=False,
         )
         query_embedding = output["dense_vecs"][0].tolist()
         results = self.store.search(query_embedding=query_embedding, top_k=top_k)
@@ -50,69 +53,98 @@ class HybridWrapper:
         return reciprocal_rank_fusion([b, d])[:top_k]
 
 
+class HybridWithRerankerWrapper:
+    def __init__(self, bm25, dense, reranker):
+        self.bm25 = bm25
+        self.dense = dense
+        self.reranker = reranker
+
+    def search(self, query: str, top_k: int = 10) -> list[dict]:
+        b = self.bm25.search(query, top_k=20)
+        d = self.dense.search(query, top_k=20)
+        fused = reciprocal_rank_fusion([b, d])[:30]
+        return self.reranker.rerank(query, fused, top_k=top_k)
+
+
 def main():
     print("=" * 60)
-    print("  真实数据完整评估")
+    print("  真实数据完整评估（含 Reranker）")
     print("=" * 60)
 
-    # 读取真实 chunks
-    chunks_file = Path("data/processed/chunks.json")
-    chunks = json.loads(chunks_file.read_text(encoding="utf-8"))
-    print(f"\n加载 {len(chunks)} 个 chunks")
-
-    # 读取真实评估集
-    eval_file = Path("data/eval/llm_eval_set.json")
-    eval_set = json.loads(eval_file.read_text(encoding="utf-8"))
-    print(f"评估集: {len(eval_set)} 条")
+    # 读取数据
+    chunks = json.loads(Path("data/processed/chunks.json").read_text(encoding="utf-8"))
+    eval_set = json.loads(
+        Path("data/eval/llm_eval_set.json").read_text(encoding="utf-8")
+    )
+    print(f"\nChunks: {len(chunks)} | 评估集: {len(eval_set)}")
 
     # 加载模型
-    print("\n加载 bge-m3...")
-    model = BGEM3FlagModel("BAAI/bge-m3", use_fp16=True)
+    print(f"\n加载 {EMBEDDING['model']}...")
+    embed_model = BGEM3FlagModel(EMBEDDING["model"], use_fp16=EMBEDDING["use_fp16"])
 
-    # 建 BM25 索引
-    print("建 BM25 索引...")
+    print("加载 bge-reranker-v2-m3...")
+    reranker = CrossEncoderReranker(model_name="BAAI/bge-reranker-v2-m3")
+    reranker._load_model()
+
+    # 构建检索器
+    print("构建 BM25 索引...")
     bm25 = BM25Retriever()
-    bm25.build_index(chunks)
+    bm25.load_index("data/bm25_index.pkl")
 
-    # 连接 Milvus
-    store = MilvusStore(db_path="data/milvus_lite.db")
-    dense = RealDenseRetriever(model=model, store=store)
+    store = ChromaStore(
+        persist_dir=VECTOR_STORE["persist_dir"],
+        collection_name=VECTOR_STORE["collection_name"],
+    )
+    dense = RealDenseRetriever(model=embed_model, store=store)
     hybrid = HybridWrapper(bm25=bm25, dense=dense)
+    hybrid_rerank = HybridWithRerankerWrapper(bm25=bm25, dense=dense, reranker=reranker)
 
     # 评估
     evaluator = RetrievalEvaluator()
     evaluator.load_eval_set_from_list(eval_set)
 
-    print("\n开始评估（需要几分钟）...")
+    print("\n开始评估...")
+    print("  评估 BM25...")
     bm25_metrics = evaluator.evaluate(bm25, k=10)
+    print("  评估 Dense...")
     dense_metrics = evaluator.evaluate(dense, k=10)
+    print("  评估 Hybrid...")
     hybrid_metrics = evaluator.evaluate(hybrid, k=10)
+    print("  评估 Hybrid + Reranker...")
+    rerank_metrics = evaluator.evaluate(hybrid_rerank, k=10)
 
     # 输出结果
-    print(f"\n{'─'*55}")
-    print(f"  {'配置':<25} {'Recall@10':>10} {'MRR':>8} {'NDCG@10':>8}")
-    print(f"  {'─'*25} {'─'*10} {'─'*8} {'─'*8}")
-    print(f"  {'纯 BM25':<25} {bm25_metrics['recall@10']:>10.4f} {bm25_metrics['mrr']:>8.4f} {bm25_metrics['ndcg@10']:>8.4f}")
-    print(f"  {'纯 Dense (bge-m3)':<25} {dense_metrics['recall@10']:>10.4f} {dense_metrics['mrr']:>8.4f} {dense_metrics['ndcg@10']:>8.4f}")
-    print(f"  {'BM25+Dense+RRF':<25} {hybrid_metrics['recall@10']:>10.4f} {hybrid_metrics['mrr']:>8.4f} {hybrid_metrics['ndcg@10']:>8.4f}")
+    print(f"\n{'─'*60}")
+    print(f"  {'配置':<28} {'Recall@10':>10} {'MRR':>8} {'NDCG@10':>8}")
+    print(f"  {'─'*28} {'─'*10} {'─'*8} {'─'*8}")
+    for name, m in [
+        ("纯 BM25", bm25_metrics),
+        ("纯 Dense (bge-m3)", dense_metrics),
+        ("BM25+Dense+RRF", hybrid_metrics),
+        ("BM25+Dense+RRF+Reranker", rerank_metrics),
+    ]:
+        print(f"  {name:<28} {m['recall@10']:>10.4f} {m['mrr']:>8.4f} {m['ndcg@10']:>8.4f}")
 
-    delta = hybrid_metrics['recall@10'] - bm25_metrics['recall@10']
-    print(f"\n  混合检索 vs BM25: Recall@10 {delta:+.4f}")
+    delta = rerank_metrics["recall@10"] - bm25_metrics["recall@10"]
+    print(f"\n  Reranker vs BM25: Recall@10 {delta:+.4f}")
 
-    # 保存
+    # 保存报告
     report = {
         "data_stats": {"chunks": len(chunks), "eval_set": len(eval_set)},
         "results": {
             "BM25": bm25_metrics,
             "Dense_bge_m3": dense_metrics,
             "Hybrid_BM25_Dense_RRF": hybrid_metrics,
-        }
+            "Hybrid_BM25_Dense_RRF_Reranker": rerank_metrics,
+        },
     }
-    evaluator.save_report(report, "evaluation/reports/real_eval_report.json")
-    print(f"\n  报告已保存: evaluation/reports/real_eval_report.json")
-
+    Path("evaluation/reports").mkdir(parents=True, exist_ok=True)
+    Path("evaluation/reports/full_eval_report.json").write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    print(f"\n  报告已保存: evaluation/reports/full_eval_report.json")
     print("\n" + "=" * 60)
-    print("  ✅ 真实评估完成！把这些数字更新到 README")
+    print("  ✅ 完整评估完成！")
     print("=" * 60)
 
 

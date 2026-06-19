@@ -1,0 +1,32 @@
+{
+  "data_stats": {
+    "chunks": 125,
+    "eval_set": 116
+  },
+  "results": {
+    "BM25": {
+      "recall@10": 0.8448,
+      "mrr": 0.6269,
+      "ndcg@10": 0.6793,
+      "num_queries": 116
+    },
+    "Dense_bge_m3": {
+      "recall@10": 0.8362,
+      "mrr": 0.6458,
+      "ndcg@10": 0.6931,
+      "num_queries": 116
+    },
+    "Hybrid_BM25_Dense_RRF": {
+      "recall@10": 0.8707,
+      "mrr": 0.672,
+      "ndcg@10": 0.7211,
+      "num_queries": 116
+    },
+    "Hybrid_BM25_Dense_RRF_Reranker": {
+      "recall@10": 0.819,
+      "mrr": 0.636,
+      "ndcg@10": 0.6807,
+      "num_queries": 116
+    }
+  }
+}

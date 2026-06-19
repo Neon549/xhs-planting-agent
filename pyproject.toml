@@ -45,6 +45,9 @@ dependencies = [
     "onnxruntime<1.20",
     "jieba>=0.42.1",
     "milvus-lite>=3.0",
+    "transformers==4.44.0",
+    "peft>=0.19.1",
+    "mcp>=1.27.2",
 ]
 
 [project.optional-dependencies]
@@ -59,4 +62,9 @@ dev = [
 frontend = [
     "streamlit>=1.38.0",
     "plotly>=5.20.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
 ]

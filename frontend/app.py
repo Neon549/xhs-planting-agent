@@ -1,4 +1,5 @@
 """Streamlit 前端"""
+
 # 模块 9 实现
 
 import streamlit as st
@@ -11,9 +12,9 @@ st.set_page_config(
 
 import requests
 import json
+import os
 
-
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # ── 标题 ──────────────────────────────────────────────────────
 st.title("🌿 小红书种草决策 Agent")
@@ -59,7 +60,7 @@ with col1:
         "输入你的问题",
         value=st.session_state.get("query_input", ""),
         height=100,
-        placeholder="例如：想买一台轻薄笔记本，预算5000以内，主要用来办公"
+        placeholder="例如：想买一台轻薄笔记本，预算5000以内，主要用来办公",
     )
 
     submit = st.button("🚀 开始推荐", type="primary", use_container_width=True)
@@ -109,8 +110,10 @@ if submit and user_query:
                 # 解析结果
                 parsed = data.get("parsed_query", {})
                 if parsed:
-                    st.caption(f"品类识别：{parsed.get('category', '未知')} | "
-                              f"关键词：{', '.join(parsed.get('keywords', [])[:5])}")
+                    st.caption(
+                        f"品类识别：{parsed.get('category', '未知')} | "
+                        f"关键词：{', '.join(parsed.get('keywords', [])[:5])}"
+                    )
 
                 # 个性化上下文
                 if data.get("user_context"):
@@ -127,13 +130,17 @@ if submit and user_query:
                 if sources:
                     st.subheader("📎 推荐依据")
                     for i, src in enumerate(sources):
-                        with st.expander(f"来源 {i+1}：{src.get('text_preview', '')[:40]}..."):
+                        with st.expander(
+                            f"来源 {i+1}：{src.get('text_preview', '')[:40]}..."
+                        ):
                             st.write(f"**笔记 ID**：{src.get('note_id')}")
                             st.write(f"**点赞数**：{src.get('liked_count', 0)}")
                             st.write(f"**内容**：{src.get('text_preview', '')}")
 
         except requests.exceptions.ConnectionError:
-            st.error("❌ 无法连接 API，请先启动：`uv run uvicorn src.api.main:app --reload`")
+            st.error(
+                "❌ 无法连接 API，请先启动：`uv run uvicorn src.api.main:app --reload`"
+            )
         except Exception as e:
             st.error(f"❌ 出错了：{e}")
 

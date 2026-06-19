@@ -1,4 +1,5 @@
 """Hybrid 检索: BM25 + Dense + Reranker"""
+
 # 模块 5 实现
 """
 混合检索器（Hybrid Retriever）
@@ -21,7 +22,10 @@ RRF（Reciprocal Rank Fusion）公式:
 from loguru import logger
 from src.retrieval.bm25_retriever import BM25Retriever
 from src.retrieval.dense_retriever import DenseRetriever
-from src.retrieval.reranker import Reranker
+from src.retrieval.reranker import create_reranker
+from src.retrieval.reranker import BaseReranker
+
+reranker = create_reranker()
 
 
 def reciprocal_rank_fusion(
@@ -60,13 +64,15 @@ def reciprocal_rank_fusion(
             sources_map[chunk_id].append(chunk.get("source", "unknown"))
 
     # 排序
-    sorted_ids = sorted(rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True)
+    sorted_ids = sorted(
+        rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True
+    )
 
     results = []
     for rank, chunk_id in enumerate(sorted_ids):
         chunk = dict(chunk_map[chunk_id])
         chunk["rrf_score"] = round(rrf_scores[chunk_id], 6)
-        chunk["sources"] = sources_map[chunk_id]   # 记录这个 chunk 被哪几路召回
+        chunk["sources"] = sources_map[chunk_id]  # 记录这个 chunk 被哪几路召回
         chunk["rank"] = rank + 1
         results.append(chunk)
 
@@ -95,7 +101,7 @@ class HybridRetriever:
         self,
         bm25: BM25Retriever,
         dense: DenseRetriever,
-        reranker: Reranker | None = None,
+        reranker: BaseReranker | None = None,
         bm25_top_k: int = 20,
         dense_top_k: int = 20,
         rrf_k: int = 60,
@@ -108,53 +114,45 @@ class HybridRetriever:
         self.rrf_k = rrf_k
 
     def search(
-        self,
-        query: str,
-        top_k: int = 10,
-        use_reranker: bool = True,
+            self,
+            query: str,
+            top_k: int = 10,
+            use_reranker: bool = True,
+            trace: "TraceContext | None" = None,
     ) -> list[dict]:
-        """
-        三阶段混合检索。
-
-        参数:
-            query: 用户查询
-            top_k: 最终返回数量
-            use_reranker: 是否启用 Reranker（关闭可加速，用于对比实验）
-
-        返回:
-            精排后的 Top-K chunks
-        """
         logger.info(f"混合检索开始: '{query}' | top_k={top_k} | reranker={use_reranker}")
 
-        # ── 阶段 1：双路粗召回 ──────────────────────────────
+        # 阶段1：双路粗召回
         bm25_results = self.bm25.search(query, top_k=self.bm25_top_k)
         dense_results = self.dense.search(query, top_k=self.dense_top_k)
+        if trace:
+            trace.record("bm25", {"count": len(bm25_results),
+                                  "top3_ids": [r["chunk_id"] for r in bm25_results[:3]]})
+            trace.record("dense", {"count": len(dense_results),
+                                   "top3_ids": [r["chunk_id"] for r in dense_results[:3]]})
 
         logger.debug(f"粗召回: BM25={len(bm25_results)} | Dense={len(dense_results)}")
 
-        # ── 阶段 2：RRF 融合 ────────────────────────────────
-        fused = reciprocal_rank_fusion(
-            [bm25_results, dense_results],
-            k=self.rrf_k,
-        )
-
-        # 统计融合效果（被两路同时召回的 chunk）
+        # 阶段2：RRF融合
+        fused = reciprocal_rank_fusion([bm25_results, dense_results], k=self.rrf_k)
         both_recalled = sum(1 for c in fused if len(c.get("sources", [])) == 2)
-        logger.debug(f"RRF 融合: {len(fused)} 候选 | 双路命中: {both_recalled}")
+        if trace:
+            trace.record("rrf", {"fused_count": len(fused), "both_recalled": both_recalled})
 
-        # ── 阶段 3：Reranker 精排 ──────────────────────────
+        # 阶段3：Reranker精排
         if use_reranker and self.reranker is not None:
-            # 取 RRF Top-30 送入 Reranker（节省计算）
             rerank_candidates = fused[:30]
             results = self.reranker.rerank(query, rerank_candidates, top_k=top_k)
+            if trace:
+                top_score = results[0].get("rerank_score", 0) if results else 0
+                trace.record("rerank", {"top_score": top_score, "count": len(results)})
         else:
             results = fused[:top_k]
 
-        logger.info(
-            f"混合检索完成: '{query}' → {len(results)} 条 | "
-            f"stages: BM25({len(bm25_results)}) + Dense({len(dense_results)}) "
-            f"→ RRF({len(fused)}) → {'Reranker' if use_reranker else 'NoReranker'}({len(results)})"
-        )
+        if trace:
+            trace.save()
+
+        logger.info(f"混合检索完成: '{query}' → {len(results)} 条")
         return results
 
     def search_ablation(self, query: str, top_k: int = 10) -> dict:

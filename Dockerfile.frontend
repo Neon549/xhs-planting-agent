@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir streamlit requests loguru
+
+COPY frontend/ ./frontend/
+
+ENV BACKEND_URL=https://Neonzz-xhs-planting-agent-backend.hf.space
+ENV PORT=7860
+
+CMD ["streamlit", "run", "frontend/app.py", "--server.port", "7860", "--server.address", "0.0.0.0"]
