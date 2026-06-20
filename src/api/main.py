@@ -18,7 +18,6 @@ from src.api.schemas import QueryRequest, QueryResponse
 from src.graph.workflow import build_workflow, run_workflow
 from src.retrieval.bm25_retriever import BM25Retriever
 from src.retrieval.hybrid_retriever import HybridRetriever
-from src.retrieval.milvus_store import MilvusStore
 from src.retrieval.reranker import create_reranker
 from src.memory.long_term import LongTermMemory
 from src.memory.short_term import ShortTermMemory
@@ -79,8 +78,13 @@ def _init_retriever() -> HybridRetriever:
     elif deploy_mode == "local":
         try:
             from src.retrieval.dense_retriever import DenseRetriever
+            from src.retrieval.chroma_store import ChromaStore
+            from config.settings import VECTOR_STORE
 
-            store = MilvusStore(db_path="data/milvus_lite.db")
+            store = ChromaStore(
+                persist_dir=str(Path("data/chroma")),
+                collection_name=VECTOR_STORE["collection_name"],
+            )
             dense = DenseRetriever(milvus_store=store)
         except Exception as e:
             logger.warning(f"Dense 检索初始化失败，使用 mock: {e}")

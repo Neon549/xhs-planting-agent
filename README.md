@@ -70,3 +70,38 @@ src/
 ├── graph/        # LangGraph 工作流
 └── api/          # FastAPI 接口
 ```
+
+## MCP Server 配置
+
+### Claude Desktop
+在 `claude_desktop_config.json` 里加：
+
+```json
+{
+  "mcpServers": {
+    "xhs-rag": {
+      "command": "python",
+      "args": ["src/mcp_server/server.py"],
+      "cwd": "D:/code/ProjectExample/xhs-planting-agent"
+    }
+  }
+}
+```
+
+### Claude Code
+在项目根目录 `.claude/settings.json` 里加：
+
+```json
+{
+  "mcpServers": {
+    "xhs-rag": {
+      "command": "python",
+      "args": ["src/mcp_server/server.py"]
+    }
+  }
+}
+```
+
+## 可用工具
+- `query_knowledge_hub`：混合检索小红书笔记（BM25+bge-m3+RRF）
+- 消融实验结果：Hybrid+RRF Recall@10=0.8707 MRR=0.6720
