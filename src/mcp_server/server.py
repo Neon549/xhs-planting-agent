@@ -8,12 +8,13 @@ XHS Planting Agent - MCP Server
 """
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+# 项目根目录，所有路径基于此
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import asyncio
 import json
-import pickle
-from pathlib import Path
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -39,7 +40,7 @@ def build_retriever() -> HybridRetriever:
     """初始化混合检索器，模型常驻内存。"""
     logger.info("初始化 ChromaStore...")
     store = ChromaStore(
-        persist_dir=VECTOR_STORE["persist_dir"],
+        persist_dir=str(PROJECT_ROOT / "data" / "chroma"),
         collection_name=VECTOR_STORE["collection_name"],
     )
 
@@ -49,7 +50,7 @@ def build_retriever() -> HybridRetriever:
 
     logger.info("加载 BM25 索引...")
     bm25 = BM25Retriever()
-    bm25.load_index("data/bm25_index.pkl")
+    bm25.load_index(str(PROJECT_ROOT / "data" / "bm25_index.pkl"))
 
     reranker = create_reranker(RERANKER)
 
