@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XHS-Mind · 小红书智能种草引擎</title>
+<style>
+  /* ── Token System ── */
+  :root {
+    --red:       #FF2442;
+    --red-dark:  #CC1A33;
+    --red-soft:  #FFF0F2;
+    --ink:       #1A1A1A;
+    --ink-2:     #4A4A4A;
+    --ink-3:     #9A9A9A;
+    --surface:   #FFFFFF;
+    --surface-2: #F7F7F7;
+    --border:    #EBEBEB;
+    --radius:    12px;
+    --radius-lg: 20px;
+    --shadow:    0 2px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.12);
+    --font-display: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-display);
+    color: var(--ink);
+    background: var(--surface);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px;
+    height: 64px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 20px; font-weight: 700; color: var(--ink);
+    text-decoration: none; letter-spacing: -0.5px;
+  }
+  .nav-logo span { color: var(--red); }
+
+  .nav-links {
+    display: flex; align-items: center; gap: 36px;
+    list-style: none;
+  }
+  .nav-links a {
+    font-size: 14px; color: var(--ink-2); text-decoration: none;
+    transition: color 0.2s; cursor: pointer;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--red); }
+
+  .nav-cta {
+    background: var(--red); color: #fff;
+    border: none; border-radius: 999px;
+    padding: 8px 20px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .nav-cta:hover { background: var(--red-dark); }
+
+  /* ── Pages ── */
+  .page { display: none; padding-top: 64px; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ── HOME ── */
+  .hero {
+    position: relative;
+    min-height: calc(100vh - 64px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 80px 24px;
+    background: linear-gradient(160deg, #fff 0%, #FFF0F2 50%, #fff 100%);
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 60%, rgba(255,36,66,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--red-soft); color: var(--red);
+    border: 1px solid rgba(255,36,66,0.2);
+    border-radius: 999px; padding: 4px 14px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+    margin-bottom: 24px;
+  }
+  .hero-tag::before { content: '●'; font-size: 8px; animation: blink 1.4s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .hero h1 {
+    font-size: clamp(36px, 6vw, 72px);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -2px; color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .hero h1 em { color: var(--red); font-style: normal; }
+
+  .hero-sub {
+    font-size: clamp(15px, 2vw, 18px);
+    color: var(--ink-2); max-width: 560px;
+    margin: 0 auto 40px;
+  }
+
+  .hero-btns {
+    display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 64px;
+  }
+  .btn-primary {
+    background: var(--red); color: #fff;
+    border: none; border-radius: 999px;
+    padding: 14px 32px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(255,36,66,0.3);
+  }
+  .btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(255,36,66,0.4); }
+
+  .btn-secondary {
+    background: #fff; color: var(--ink);
+    border: 1.5px solid var(--border); border-radius: 999px;
+    padding: 14px 32px; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--red); color: var(--red); }
+
+  /* Stats */
+  .stats-row {
+    display: flex; gap: 48px; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-size: 36px; font-weight: 800; color: var(--ink);
+    letter-spacing: -1px;
+  }
+  .stat-num span { color: var(--red); }
+  .stat-label { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+  /* Feature cards */
+  .section {
+    padding: 80px 48px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px;
+    color: var(--red); text-transform: uppercase; margin-bottom: 12px;
+  }
+  .section-title {
+    font-size: clamp(24px, 4vw, 40px);
+    font-weight: 800; letter-spacing: -1px;
+    color: var(--ink); margin-bottom: 48px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  .feature-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    transition: all 0.2s;
+  }
+  .feature-card:hover {
+    border-color: var(--red);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+  }
+  .feature-icon {
+    width: 44px; height: 44px;
+    background: var(--red-soft);
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 16px;
+  }
+  .feature-card h3 {
+    font-size: 16px; font-weight: 700;
+    color: var(--ink); margin-bottom: 8px;
+  }
+  .feature-card p {
+    font-size: 14px; color: var(--ink-2); line-height: 1.6;
+  }
+
+  /* ── ABOUT ── */
+  .about-hero {
+    background: var(--ink);
+    color: #fff;
+    padding: 80px 48px;
+    text-align: center;
+  }
+  .about-hero h1 {
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 800; letter-spacing: -1.5px;
+    margin-bottom: 16px;
+  }
+  .about-hero p { font-size: 16px; color: rgba(255,255,255,0.6); max-width: 600px; margin: 0 auto; }
+
+  .about-content {
+    max-width: 1200px; margin: 0 auto;
+    padding: 80px 48px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px;
+    align-items: start;
+  }
+  .about-text h2 {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.5px; margin-bottom: 16px;
+  }
+  .about-text p { font-size: 15px; color: var(--ink-2); margin-bottom: 16px; line-height: 1.8; }
+
+  .tech-stack {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px;
+  }
+  .tech-tag {
+    background: var(--red-soft); color: var(--red);
+    border: 1px solid rgba(255,36,66,0.15);
+    border-radius: 999px; padding: 4px 12px;
+    font-size: 12px; font-weight: 600;
+  }
+
+  .arch-diagram {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+  }
+  .arch-diagram h3 {
+    font-size: 14px; font-weight: 700;
+    color: var(--ink-3); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 20px;
+  }
+  .arch-flow { display: flex; flex-direction: column; gap: 8px; }
+  .arch-step {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+  }
+  .arch-step-icon {
+    width: 32px; height: 32px;
+    background: var(--red-soft); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .arch-step-text { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .arch-step-sub { font-size: 11px; color: var(--ink-3); }
+  .arch-arrow {
+    text-align: center; color: var(--red);
+    font-size: 16px; margin: -2px 0;
+  }
+
+  /* ── TECH ── */
+  .tech-hero {
+    background: linear-gradient(135deg, #FF2442 0%, #CC1A33 100%);
+    color: #fff; padding: 80px 48px; text-align: center;
+  }
+  .tech-hero h1 {
+    font-size: clamp(28px, 5vw, 56px);
+    font-weight: 800; letter-spacing: -1.5px; margin-bottom: 16px;
+  }
+  .tech-hero p { font-size: 16px; opacity: 0.8; max-width: 560px; margin: 0 auto; }
+
+  .tech-content { max-width: 1200px; margin: 0 auto; padding: 80px 48px; }
+
+  .pipeline {
+    display: flex; align-items: center;
+    gap: 0; flex-wrap: wrap;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 28px;
+    margin-bottom: 48px; overflow-x: auto;
+  }
+  .pipeline-step {
+    flex: 1; min-width: 100px;
+    text-align: center; padding: 0 8px;
+  }
+  .pipeline-icon {
+    width: 48px; height: 48px;
+    background: var(--red); border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin: 0 auto 8px; color: #fff;
+  }
+  .pipeline-name { font-size: 12px; font-weight: 700; color: var(--ink); }
+  .pipeline-desc { font-size: 10px; color: var(--ink-3); margin-top: 2px; }
+  .pipeline-arrow {
+    color: var(--ink-3); font-size: 20px; padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .ablation-table {
+    width: 100%; border-collapse: collapse;
+    margin-top: 24px;
+  }
+  .ablation-table th {
+    text-align: left; font-size: 12px; font-weight: 700;
+    color: var(--ink-3); text-transform: uppercase;
+    letter-spacing: 1px; padding: 12px 16px;
+    border-bottom: 2px solid var(--border);
+  }
+  .ablation-table td {
+    padding: 14px 16px; font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ablation-table tr:last-child td { border-bottom: none; }
+  .ablation-table tr.best { background: var(--red-soft); }
+  .ablation-table tr.best td { font-weight: 700; color: var(--red); }
+  .metric-up { color: #22C55E; font-size: 12px; margin-left: 4px; }
+
+  /* ── CHAT ── */
+  .chat-layout {
+    display: flex; height: calc(100vh - 64px);
+  }
+  .chat-sidebar {
+    width: 280px; flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    padding: 24px 20px;
+    background: var(--surface-2);
+    overflow-y: auto;
+  }
+  .chat-sidebar h3 {
+    font-size: 13px; font-weight: 700; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+  .quick-chips { display: flex; flex-direction: column; gap: 8px; }
+  .chip {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px;
+    font-size: 13px; color: var(--ink-2);
+    cursor: pointer; transition: all 0.15s;
+    text-align: left;
+  }
+  .chip:hover { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+
+  .chat-main {
+    flex: 1; display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .chat-avatar {
+    width: 36px; height: 36px;
+    background: var(--red); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px; flex-shrink: 0;
+  }
+  .chat-header-info h4 { font-size: 15px; font-weight: 700; }
+  .chat-header-info p { font-size: 12px; color: var(--ink-3); }
+  .online-dot {
+    width: 8px; height: 8px; background: #22C55E;
+    border-radius: 50%; margin-left: auto;
+  }
+
+  .chat-messages {
+    flex: 1; overflow-y: auto;
+    padding: 24px 28px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .msg { display: flex; gap: 12px; max-width: 80%; }
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+  .msg-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .msg.ai .msg-avatar { background: var(--red); color: #fff; }
+  .msg.user .msg-avatar { background: var(--ink); color: #fff; }
+  .msg-bubble {
+    padding: 12px 16px; border-radius: 16px;
+    font-size: 14px; line-height: 1.6;
+  }
+  .msg.ai .msg-bubble {
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--ink); border-top-left-radius: 4px;
+  }
+  .msg.user .msg-bubble {
+    background: var(--red); color: #fff;
+    border-top-right-radius: 4px;
+  }
+  .msg-result-card {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px;
+    margin-top: 8px; font-size: 13px;
+  }
+  .msg-result-card .note-title { font-weight: 700; margin-bottom: 4px; }
+  .msg-result-card .note-meta { color: var(--ink-3); font-size: 11px; }
+
+  .chat-input-area {
+    padding: 16px 28px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: flex-end;
+  }
+  .chat-input {
+    flex: 1; border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg); padding: 12px 16px;
+    font-size: 14px; font-family: var(--font-display);
+    resize: none; outline: none; min-height: 48px; max-height: 120px;
+    transition: border-color 0.2s;
+    background: var(--surface-2);
+  }
+  .chat-input:focus { border-color: var(--red); background: #fff; }
+  .chat-send {
+    width: 44px; height: 44px;
+    background: var(--red); color: #fff;
+    border: none; border-radius: 50%;
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s; flex-shrink: 0;
+  }
+  .chat-send:hover { background: var(--red-dark); transform: scale(1.05); }
+  .chat-send:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+
+  .typing-indicator {
+    display: flex; gap: 4px; align-items: center; padding: 4px 0;
+  }
+  .typing-dot {
+    width: 6px; height: 6px; background: var(--ink-3);
+    border-radius: 50%; animation: typing 1.2s infinite;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+  /* ── MULTIMODAL ── */
+  .multi-layout {
+    max-width: 900px; margin: 0 auto;
+    padding: 60px 48px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  }
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-lg);
+    padding: 48px 24px; text-align: center;
+    cursor: pointer; transition: all 0.2s;
+    background: var(--surface-2);
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--red); background: var(--red-soft);
+  }
+  .upload-icon { font-size: 48px; margin-bottom: 16px; }
+  .upload-zone h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .upload-zone p { font-size: 13px; color: var(--ink-3); }
+  .upload-btn {
+    margin-top: 20px;
+    background: var(--red); color: #fff;
+    border: none; border-radius: 999px;
+    padding: 10px 24px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  #preview-img {
+    width: 100%; border-radius: var(--radius);
+    margin-top: 12px; display: none;
+    max-height: 300px; object-fit: cover;
+  }
+
+  .multi-results {
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .multi-results h3 {
+    font-size: 16px; font-weight: 700; margin-bottom: 4px;
+  }
+  .result-note {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+    transition: all 0.15s;
+  }
+  .result-note:hover { border-color: var(--red); }
+  .result-note .note-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .result-note .note-preview { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+  .result-note .note-footer {
+    display: flex; gap: 12px; margin-top: 8px;
+    font-size: 11px; color: var(--ink-3);
+  }
+  .like-count { color: var(--red); font-weight: 600; }
+
+  /* ── CONTACT ── */
+  .contact-layout {
+    max-width: 800px; margin: 0 auto;
+    padding: 80px 48px; text-align: center;
+  }
+  .contact-layout h1 {
+    font-size: 40px; font-weight: 800;
+    letter-spacing: -1px; margin-bottom: 16px;
+  }
+  .contact-layout p { font-size: 16px; color: var(--ink-2); margin-bottom: 48px; }
+  .contact-cards {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px; text-align: left;
+  }
+  .contact-card {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px;
+    transition: all 0.2s; text-decoration: none; color: var(--ink);
+  }
+  .contact-card:hover { border-color: var(--red); box-shadow: var(--shadow); }
+  .contact-card-icon { font-size: 28px; margin-bottom: 12px; }
+  .contact-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .contact-card p { font-size: 13px; color: var(--ink-3); }
+
+  /* ── Loading ── */
+  .loading-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(255,255,255,0.8); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
+  }
+  .loading-overlay.show { display: flex; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--ink-2); }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .section { padding: 48px 20px; }
+    .about-content { grid-template-columns: 1fr; }
+    .multi-layout { grid-template-columns: 1fr; padding: 40px 20px; }
+    .chat-sidebar { display: none; }
+    .chat-layout { height: calc(100vh - 64px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="#" onclick="showPage('home')">
+    XHS<span>-</span>Mind
+  </a>
+  <ul class="nav-links">
+    <li><a onclick="showPage('home')" id="nav-home" class="active">主页</a></li>
+    <li><a onclick="showPage('about')" id="nav-about">关于</a></li>
+    <li><a onclick="showPage('tech')" id="nav-tech">技术引擎</a></li>
+    <li><a onclick="showPage('chat')" id="nav-chat">AI 助手</a></li>
+    <li><a onclick="showPage('multi')" id="nav-multi">以图搜笔记</a></li>
+    <li><a onclick="showPage('contact')" id="nav-contact">联系</a></li>
+  </ul>
+  <button class="nav-cta" onclick="showPage('chat')">开始使用</button>
+</nav>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">正在检索笔记...</div>
+</div>
+
+<!-- ══ HOME ══ -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-tag">你的小红书避坑助手</div>
+    <h1>种草之前<br>先听<em>真实的声音</em></h1>
+    <p class="hero-sub">
+      小红书里藏着无数真实评测，但也混着大量广告。
+      XHS-Mind 帮你快速找到真正有用的内容，买之前不再踩坑。
+    </p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="showPage('chat')">🌿 帮我找笔记</button>
+      <button class="btn-secondary" onclick="showPage('multi')">📷 拍照搜同款</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-num">125<span>+</span></div>
+        <div class="stat-label">真实笔记收录</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0</div>
+        <div class="stat-label">广告混入</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3<span>秒</span></div>
+        <div class="stat-label">出结果</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">∞</div>
+        <div class="stat-label">白嫖不限次</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">我们能帮你做什么</div>
+    <div class="section-title">买东西之前，先问问我</div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>广告？直接过滤掉</h3>
+        <p>自动识别软广、品牌合作内容，只把真实用户的亲身体验推给你，再也不被种草广告带跑。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>真的懂你在问什么</h3>
+        <p>不是简单关键词搜索。你说"学生党平价好用的"，它知道你要的是什么，找到你真正需要的内容。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3>越用越懂你</h3>
+        <p>记住你的预算、偏好和买过的东西，下次推荐自动帮你筛掉不合适的，不用每次重新说一遍。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📷</div>
+        <h3>拍张照找同款评测</h3>
+        <p>看到朋友用了个好东西？拍张照上传，直接找到小红书上同款的真实评测和使用心得。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>3 秒出结果</h3>
+        <p>不用自己刷半小时，问一句话，帮你把最有价值的几篇笔记整理好，直接告诉你值不值得买。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>像朋友一样聊</h3>
+        <p>不用想着怎么搜索关键词，直接说你的需求——"女朋友生日送什么好"这种问题也难不倒它。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ABOUT ══ -->
+<div class="page" id="page-about">
+  <div class="about-hero">
+    <h1>XHS-Mind</h1>
+    <p>让小红书真正为你所用，而不是为广告主所用</p>
+  </div>
+  <div class="about-content">
+    <div class="about-text">
+      <h2>为什么做这个？</h2>
+      <p>
+        我们都有过这样的经历：在小红书刷了半小时，被种草了一堆产品，下单之后才发现全是广告。
+        真正有用的评测反而淹没在推广内容里，找都找不到。
+      </p>
+      <p>
+        XHS-Mind 从真实笔记出发，用 AI 自动过滤广告内容，
+        把真实用户的亲身体验提炼出来，帮你在买之前做出更好的决定。
+      </p>
+      <p>
+        不管是问"这个值不值得买"、还是拍张照找同款评测，
+        XHS-Mind 都能在几秒钟内给你一个靠谱的参考答案。
+      </p>
+      <div class="tech-stack">
+        <span class="tech-tag">LangGraph</span>
+        <span class="tech-tag">ChromaDB</span>
+        <span class="tech-tag">bge-m3</span>
+        <span class="tech-tag">BM25</span>
+        <span class="tech-tag">FastAPI</span>
+        <span class="tech-tag">Qwen-VL</span>
+        <span class="tech-tag">MCP</span>
+        <span class="tech-tag">DashScope</span>
+      </div>
+    </div>
+    <div class="arch-diagram">
+      <h3>系统架构</h3>
+      <div class="arch-flow">
+        <div class="arch-step">
+          <div class="arch-step-icon">💬</div>
+          <div>
+            <div class="arch-step-text">用户输入</div>
+            <div class="arch-step-sub">自然语言 / 图片</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-step">
+          <div class="arch-step-icon">🗂️</div>
+          <div>
+            <div class="arch-step-text">QueryPlanner</div>
+            <div class="arch-step-sub">意图解析 · 关键词提取</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-step">
+          <div class="arch-step-icon">🔍</div>
+          <div>
+            <div class="arch-step-text">HybridRetriever</div>
+            <div class="arch-step-sub">BM25 + Dense + RRF</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-step">
+          <div class="arch-step-icon">🛡️</div>
+          <div>
+            <div class="arch-step-text">AdDetector</div>
+            <div class="arch-step-sub">广告过滤</div>
+          </div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-step">
+          <div class="arch-step-icon">⭐</div>
+          <div>
+            <div class="arch-step-text">Recommender</div>
+            <div class="arch-step-sub">Qwen 生成推荐</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TECH ══ -->
+<div class="page" id="page-tech">
+  <div class="tech-hero">
+    <h1>它是怎么做到的</h1>
+    <p>以下是开发者视角的技术细节，普通用户不需要看懂这些</p>
+  </div>
+  <div class="tech-content">
+    <div class="section-label">检索流水线</div>
+    <div class="section-title" style="margin-bottom:24px">从查询到结果的完整链路</div>
+
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🔤</div>
+        <div class="pipeline-name">BM25</div>
+        <div class="pipeline-desc">关键词精确匹配</div>
+      </div>
+      <div class="pipeline-arrow">+</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🧮</div>
+        <div class="pipeline-name">Dense</div>
+        <div class="pipeline-desc">bge-m3 语义向量</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">⚖️</div>
+        <div class="pipeline-name">RRF 融合</div>
+        <div class="pipeline-desc">倒数排名融合</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🛡️</div>
+        <div class="pipeline-name">AdFilter</div>
+        <div class="pipeline-desc">广告过滤</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">✨</div>
+        <div class="pipeline-name">Qwen 生成</div>
+        <div class="pipeline-desc">结构化推荐</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:48px">消融实验结果</div>
+    <div class="section-title" style="margin-bottom:24px">数据说话，拒绝凭感觉调优</div>
+
+    <table class="ablation-table">
+      <thead>
+        <tr>
+          <th>配置</th>
+          <th>Recall@10</th>
+          <th>MRR</th>
+          <th>NDCG@10</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>纯 BM25</td>
+          <td>0.8448</td>
+          <td>0.6269</td>
+          <td>0.6793</td>
+        </tr>
+        <tr>
+          <td>纯 Dense（bge-m3）</td>
+          <td>0.8362</td>
+          <td>0.6458</td>
+          <td>0.6931</td>
+        </tr>
+        <tr class="best">
+          <td>BM25 + Dense + RRF ✦</td>
+          <td>0.8707 <span class="metric-up">▲ 最优</span></td>
+          <td>0.6720 <span class="metric-up">▲ 最优</span></td>
+          <td>0.7211 <span class="metric-up">▲ 最优</span></td>
+        </tr>
+        <tr>
+          <td>Hybrid + Reranker</td>
+          <td>0.8190</td>
+          <td>0.6360</td>
+          <td>0.6807</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p style="font-size:13px;color:var(--ink-3);margin-top:12px">
+      * Reranker 在当前知识库规模（125 chunks）下因覆盖度不足导致召回下降，
+      为已知 tradeoff，可通过扩充数据集改善。
+    </p>
+  </div>
+</div>
+
+<!-- ══ CHAT ══ -->
+<div class="page" id="page-chat">
+  <div class="chat-layout">
+    <div class="chat-sidebar">
+      <h3>快速提问</h3>
+      <div class="quick-chips">
+        <button class="chip" onclick="fillChat('iPhone 17 值得买吗')">📱 iPhone 17 值得买吗</button>
+        <button class="chip" onclick="fillChat('安卓旗舰手机推荐预算3000')">🤖 安卓旗舰推荐 3000</button>
+        <button class="chip" onclick="fillChat('家用哑铃怎么选')">💪 家用哑铃怎么选</button>
+        <button class="chip" onclick="fillChat('瑜伽垫推荐')">🧘 瑜伽垫推荐</button>
+        <button class="chip" onclick="fillChat('平价护肤品推荐敏感肌')">🌿 敏感肌护肤推荐</button>
+        <button class="chip" onclick="fillChat('耳机推荐预算500以内')">🎧 耳机推荐 500 内</button>
+      </div>
+    </div>
+    <div class="chat-main">
+      <div class="chat-header">
+        <div class="chat-avatar">🌿</div>
+        <div class="chat-header-info">
+          <h4>XHS-Mind 助手</h4>
+          <p>基于真实小红书笔记 · 广告已过滤</p>
+        </div>
+        <div class="online-dot"></div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg ai">
+          <div class="msg-avatar">🌿</div>
+          <div class="msg-bubble">
+            你好！我是 XHS-Mind，基于真实小红书笔记的种草助手。<br><br>
+            告诉我你想了解什么产品，我会从笔记库里帮你找到真实的用户评价，过滤掉广告内容，给你最有参考价值的推荐。
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea
+          class="chat-input"
+          id="chat-input"
+          placeholder="输入你的问题，例如：iPhone 17 和小米 15 哪个更值得买？"
+          rows="1"
+          onkeydown="handleChatKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="chat-send" id="chat-send-btn" onclick="sendChat()">↑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MULTIMODAL ══ -->
+<div class="page" id="page-multi">
+  <div style="padding: 40px 48px 0; max-width:900px; margin:0 auto;">
+    <div class="section-label">拍照搜同款</div>
+    <h1 style="font-size:32px;font-weight:800;letter-spacing:-1px;margin-bottom:8px">看到好东西？拍下来</h1>
+    <p style="color:var(--ink-2);font-size:15px;margin-bottom:0">
+      上传一张图，自动找到小红书上的真实评测和使用心得，不用费心想搜索词
+    </p>
+  </div>
+  <div class="multi-layout">
+    <div>
+      <div class="upload-zone" id="upload-zone"
+        ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)"
+        onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">📷</div>
+        <h3>把图片拖进来</h3>
+        <p>或者点击选择，支持拍照直传</p>
+        <button class="upload-btn" onclick="event.stopPropagation();document.getElementById('file-input').click()">
+          选择图片
+        </button>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFile(event)">
+      </div>
+      <img id="preview-img" src="" alt="预览">
+      <div id="img-desc" style="margin-top:12px;padding:12px;background:var(--red-soft);border-radius:var(--radius);font-size:13px;color:var(--red);display:none"></div>
+      <button id="search-img-btn" onclick="searchByImage()"
+        style="display:none;margin-top:12px;width:100%;background:var(--red);color:#fff;border:none;border-radius:999px;padding:12px;font-size:15px;font-weight:600;cursor:pointer">
+        🔍 搜索相关笔记
+      </button>
+    </div>
+    <div class="multi-results">
+      <h3>检索结果</h3>
+      <div id="multi-result-list">
+        <p style="color:var(--ink-3);font-size:14px">上传图片后，AI 将自动识别内容并检索相关笔记</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTACT ══ -->
+<div class="page" id="page-contact">
+  <div class="contact-layout">
+    <h1>联系我们</h1>
+    <p>XHS-Mind 是一个开源的 AI Agent 项目，欢迎交流与贡献</p>
+    <div class="contact-cards">
+      <a class="contact-card" href="https://github.com/Neon549" target="_blank">
+        <div class="contact-card-icon">🐙</div>
+        <h3>GitHub</h3>
+        <p>Neon549 · 查看源码</p>
+      </a>
+      <div class="contact-card">
+        <div class="contact-card-icon">🤗</div>
+        <h3>HuggingFace</h3>
+        <p>Neonzz · Demo 体验</p>
+      </div>
+      <div class="contact-card">
+        <div class="contact-card-icon">📧</div>
+        <h3>Email</h3>
+        <p>欢迎技术交流与合作</p>
+      </div>
+      <div class="contact-card">
+        <div class="contact-card-icon">📍</div>
+        <h3>Sydney, AU</h3>
+        <p>UNSW · MIT (Professional Computing)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// ── Navigation ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Chat ──
+let chatHistory = [];
+
+function fillChat(text) {
+  document.getElementById('chat-input').value = text;
+  showPage('chat');
+  autoResize(document.getElementById('chat-input'));
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChat();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const query = input.value.trim();
+  if (!query) return;
+
+  input.value = '';
+  autoResize(input);
+  document.getElementById('chat-send-btn').disabled = true;
+
+  appendMsg('user', query);
+
+  const typing = appendTyping();
+
+  try {
+    const res = await fetch(API + '/query', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_query: query,
+        user_id: 'web_user',
+        session_id: 'web_session_' + Date.now(),
+        use_reranker: false
+      })
+    });
+    const data = await res.json();
+    typing.remove();
+
+    let content = data.final_recommendation || '暂无结果';
+    if (data.sources && data.sources.length > 0) {
+      content += `\n\n**参考笔记（${data.retrieved_count} 篇，已过滤 ${data.ad_count} 条广告）**`;
+    }
+    appendMsg('ai', content, data.sources);
+  } catch (e) {
+    typing.remove();
+    appendMsg('ai', '⚠️ 无法连接到后端，请确认 FastAPI 已启动（localhost:8000）');
+  }
+
+  document.getElementById('chat-send-btn').disabled = false;
+}
+
+function appendMsg(role, text, sources) {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `
+    <div class="msg-avatar">${role === 'ai' ? '🌿' : '👤'}</div>
+    <div>
+      <div class="msg-bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+      ${sources && sources.length > 0 ? sources.slice(0,3).map(s => `
+        <div class="msg-result-card">
+          <div class="note-title">${s.text_preview ? s.text_preview.substring(0,40) : ''}...</div>
+          <div class="note-meta">❤️ ${s.liked_count || 0} 点赞</div>
+        </div>
+      `).join('') : ''}
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.innerHTML = `
+    <div class="msg-avatar">🌿</div>
+    <div class="msg-bubble">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+// ── Multimodal ──
+let uploadedFile = null;
+
+function dragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('drag-over');
+}
+function dragLeave(e) {
+  document.getElementById('upload-zone').classList.remove('drag-over');
+}
+function dropFile(e) {
+  e.preventDefault();
+  dragLeave(e);
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+function processFile(file) {
+  uploadedFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = document.getElementById('preview-img');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('search-img-btn').style.display = 'block';
+    document.getElementById('img-desc').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function searchByImage() {
+  if (!uploadedFile) return;
+  const btn = document.getElementById('search-img-btn');
+  btn.textContent = '识别中...';
+  btn.disabled = true;
+
+  try {
+    const formData = new FormData();
+    formData.append('file', uploadedFile);
+    const res = await fetch(API + '/multimodal/search', {
+      method: 'POST', body: formData
+    });
+    const data = await res.json();
+
+    document.getElementById('img-desc').textContent = '🔍 识别内容：' + (data.image_description || '');
+    document.getElementById('img-desc').style.display = 'block';
+
+    const list = document.getElementById('multi-result-list');
+    if (data.results && data.results.length > 0) {
+      list.innerHTML = data.results.map(r => `
+        <div class="result-note">
+          <div class="note-title">${(r.text || '').substring(0, 40)}...</div>
+          <div class="note-preview">${(r.text || '').substring(0, 100)}...</div>
+          <div class="note-footer">
+            <span class="like-count">❤️ ${r.metadata?.liked_count || 0}</span>
+            <span>${r.metadata?.category || ''}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      list.innerHTML = '<p style="color:var(--ink-3);font-size:14px">未找到相关笔记，试试其他图片</p>';
+    }
+  } catch(e) {
+    document.getElementById('img-desc').textContent = '⚠️ 多模态接口尚未接入，后续版本开放';
+    document.getElementById('img-desc').style.display = 'block';
+    document.getElementById('multi-result-list').innerHTML = '<p style="color:var(--ink-3);font-size:14px">多模态检索即将上线</p>';
+  }
+
+  btn.textContent = '🔍 搜索相关笔记';
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
