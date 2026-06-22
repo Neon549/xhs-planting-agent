@@ -24,8 +24,8 @@ from src.memory.short_term import ShortTermMemory
 from config.settings import RERANKER
 
 app = FastAPI(
-    title="小红书种草决策 Agent",
-    description="基于 LangGraph + Milvus 的多 Agent 推荐系统",
+    title="XHS-Mind",
+    description="基于真实小红书笔记的智能引擎",
     version="1.0.0",
 )
 
@@ -36,6 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from src.api.multimodal import router as multimodal_router
+app.include_router(multimodal_router)
 
 # ── 初始化检索器 ────────────────────────────────────────────────
 def _init_retriever() -> HybridRetriever:
