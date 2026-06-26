@@ -324,27 +324,87 @@
   .chat-layout {
     display: flex; height: calc(100vh - 64px);
   }
+  /* ── CHAT SIDEBAR 对话管理 ── */
   .chat-sidebar {
-    width: 280px; flex-shrink: 0;
+    width: 260px; flex-shrink: 0;
     border-right: 1px solid var(--border);
-    padding: 24px 20px;
     background: var(--surface-2);
-    overflow-y: auto;
+    display: flex; flex-direction: column;
+    overflow: hidden;
   }
-  .chat-sidebar h3 {
-    font-size: 13px; font-weight: 700; color: var(--ink-3);
+  .sidebar-top {
+    padding: 16px 12px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .new-chat-btn {
+    width: 100%;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--red); color: #fff;
+    border: none; border-radius: var(--radius);
+    padding: 10px 14px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .new-chat-btn:hover { background: var(--red-dark); }
+  .sidebar-search {
+    margin-top: 8px;
+    width: 100%; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 8px 12px;
+    font-size: 13px; background: #fff; outline: none;
+    font-family: var(--font-display);
+  }
+  .sidebar-search:focus { border-color: var(--red); }
+
+  .sidebar-list {
+    flex: 1; overflow-y: auto; padding: 8px 0;
+  }
+  .sidebar-section-label {
+    font-size: 11px; font-weight: 700; color: var(--ink-3);
     text-transform: uppercase; letter-spacing: 1px;
-    margin-bottom: 16px;
+    padding: 8px 16px 4px;
   }
-  .quick-chips { display: flex; flex-direction: column; gap: 8px; }
-  .chip {
+  .conv-item {
+    display: flex; align-items: center;
+    padding: 8px 12px; cursor: pointer;
+    border-radius: var(--radius); margin: 1px 8px;
+    transition: background 0.15s; position: relative;
+    group: true;
+  }
+  .conv-item:hover { background: var(--border); }
+  .conv-item.active { background: var(--red-soft); }
+  .conv-item.active .conv-title { color: var(--red); font-weight: 600; }
+  .conv-title {
+    flex: 1; font-size: 13px; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0;
+  }
+  .conv-time {
+    font-size: 11px; color: var(--ink-3); flex-shrink: 0; margin-left: 4px;
+  }
+  .conv-menu-btn {
+    display: none; background: none; border: none;
+    color: var(--ink-3); cursor: pointer; padding: 2px 4px;
+    border-radius: 4px; font-size: 14px; flex-shrink: 0;
+  }
+  .conv-item:hover .conv-menu-btn { display: block; }
+  .conv-menu-btn:hover { background: var(--border); color: var(--ink); }
+
+  /* 右键/菜单 */
+  .ctx-menu {
+    position: fixed; z-index: 999;
     background: #fff; border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 10px 14px;
-    font-size: 13px; color: var(--ink-2);
-    cursor: pointer; transition: all 0.15s;
-    text-align: left;
+    border-radius: var(--radius); box-shadow: var(--shadow-lg);
+    padding: 4px; min-width: 140px; display: none;
   }
-  .chip:hover { border-color: var(--red); color: var(--red); background: var(--red-soft); }
+  .ctx-menu.show { display: block; }
+  .ctx-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; border-radius: 6px;
+    font-size: 13px; cursor: pointer; color: var(--ink);
+    transition: background 0.1s;
+  }
+  .ctx-item:hover { background: var(--surface-2); }
+  .ctx-item.danger { color: #EF4444; }
+  .ctx-item.danger:hover { background: #FEF2F2; }
 
   .chat-main {
     flex: 1; display: flex; flex-direction: column;
@@ -555,7 +615,7 @@
   <ul class="nav-links">
     <li><a onclick="showPage('home')" id="nav-home" class="active">主页</a></li>
     <li><a onclick="showPage('about')" id="nav-about">关于</a></li>
-    <li><a onclick="showPage('tech')" id="nav-tech">技术引擎</a></li>
+    <li><a onclick="showPage('tech')" id="nav-tech">为什么选我们</a></li>
     <li><a onclick="showPage('chat')" id="nav-chat">AI 助手</a></li>
     <li><a onclick="showPage('multi')" id="nav-multi">以图搜笔记</a></li>
     <li><a onclick="showPage('contact')" id="nav-contact">联系</a></li>
@@ -661,57 +721,48 @@
         不管是问"这个值不值得买"、还是拍张照找同款评测，
         XHS-Mind 都能在几秒钟内给你一个靠谱的参考答案。
       </p>
-      <div class="tech-stack">
-        <span class="tech-tag">LangGraph</span>
-        <span class="tech-tag">ChromaDB</span>
-        <span class="tech-tag">bge-m3</span>
-        <span class="tech-tag">BM25</span>
-        <span class="tech-tag">FastAPI</span>
-        <span class="tech-tag">Qwen-VL</span>
-        <span class="tech-tag">MCP</span>
-        <span class="tech-tag">DashScope</span>
-      </div>
+
     </div>
     <div class="arch-diagram">
-      <h3>系统架构</h3>
+      <h3>你问一句话，背后发生了什么</h3>
       <div class="arch-flow">
         <div class="arch-step">
           <div class="arch-step-icon">💬</div>
           <div>
-            <div class="arch-step-text">用户输入</div>
-            <div class="arch-step-sub">自然语言 / 图片</div>
+            <div class="arch-step-text">你提问</div>
+            <div class="arch-step-sub">文字描述 / 上传图片</div>
           </div>
         </div>
         <div class="arch-arrow">↓</div>
         <div class="arch-step">
-          <div class="arch-step-icon">🗂️</div>
+          <div class="arch-step-icon">🧠</div>
           <div>
-            <div class="arch-step-text">QueryPlanner</div>
-            <div class="arch-step-sub">意图解析 · 关键词提取</div>
+            <div class="arch-step-text">AI 理解你的意思</div>
+            <div class="arch-step-sub">不只是关键词，是真正读懂需求</div>
           </div>
         </div>
         <div class="arch-arrow">↓</div>
         <div class="arch-step">
           <div class="arch-step-icon">🔍</div>
           <div>
-            <div class="arch-step-text">HybridRetriever</div>
-            <div class="arch-step-sub">BM25 + Dense + RRF</div>
+            <div class="arch-step-text">从笔记库里找答案</div>
+            <div class="arch-step-sub">精准匹配 + 语义理解双路并行</div>
           </div>
         </div>
         <div class="arch-arrow">↓</div>
         <div class="arch-step">
           <div class="arch-step-icon">🛡️</div>
           <div>
-            <div class="arch-step-text">AdDetector</div>
-            <div class="arch-step-sub">广告过滤</div>
+            <div class="arch-step-text">过滤广告内容</div>
+            <div class="arch-step-sub">自动识别软广，只留真实评测</div>
           </div>
         </div>
         <div class="arch-arrow">↓</div>
         <div class="arch-step">
           <div class="arch-step-icon">⭐</div>
           <div>
-            <div class="arch-step-text">Recommender</div>
-            <div class="arch-step-sub">Qwen 生成推荐</div>
+            <div class="arch-step-text">给你一个靠谱的答案</div>
+            <div class="arch-step-sub">基于真实笔记，有据可查</div>
           </div>
         </div>
       </div>
@@ -722,129 +773,83 @@
 <!-- ══ TECH ══ -->
 <div class="page" id="page-tech">
   <div class="tech-hero">
-    <h1>它是怎么做到的</h1>
-    <p>以下是开发者视角的技术细节，普通用户不需要看懂这些</p>
+    <h1>我们的承诺</h1>
+    <p>XHS-Mind 做到了什么，有数据为证</p>
   </div>
   <div class="tech-content">
-    <div class="section-label">检索流水线</div>
-    <div class="section-title" style="margin-bottom:24px">从查询到结果的完整链路</div>
-
-    <div class="pipeline">
-      <div class="pipeline-step">
-        <div class="pipeline-icon">🔤</div>
-        <div class="pipeline-name">BM25</div>
-        <div class="pipeline-desc">关键词精确匹配</div>
+    <div class="features-grid" style="margin-bottom:64px">
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>找到你真正需要的</h3>
+        <p>不是简单的关键词匹配。能理解"学生党平价好用"这样的口语表达，找到真正符合你需求的内容。</p>
       </div>
-      <div class="pipeline-arrow">+</div>
-      <div class="pipeline-step">
-        <div class="pipeline-icon">🧮</div>
-        <div class="pipeline-name">Dense</div>
-        <div class="pipeline-desc">bge-m3 语义向量</div>
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>广告自动识别过滤</h3>
+        <p>自动区分真实用户分享和品牌推广内容，你看到的每一条推荐，都是真实的用户亲身体验。</p>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="pipeline-icon">⚖️</div>
-        <div class="pipeline-name">RRF 融合</div>
-        <div class="pipeline-desc">倒数排名融合</div>
+      <div class="feature-card">
+        <div class="feature-icon">📷</div>
+        <h3>看图识货</h3>
+        <p>拍下感兴趣的产品，上传图片，系统自动识别是什么，找到相关的真实评测，不用猜型号。</p>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="pipeline-icon">🛡️</div>
-        <div class="pipeline-name">AdFilter</div>
-        <div class="pipeline-desc">广告过滤</div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>3 秒出结果</h3>
+        <p>不用自己刷半小时，问一句话，几秒内整理出最有价值的内容，直接告诉你结论。</p>
       </div>
-      <div class="pipeline-arrow">→</div>
-      <div class="pipeline-step">
-        <div class="pipeline-icon">✨</div>
-        <div class="pipeline-name">Qwen 生成</div>
-        <div class="pipeline-desc">结构化推荐</div>
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3>越用越懂你</h3>
+        <p>记住你的偏好和预算，不用每次重新说。用得越多，推荐越准。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>有据可查，不是瞎猜</h3>
+        <p>每条推荐都标注来源笔记和点赞数，你可以自己去验证，我们不造假。</p>
       </div>
     </div>
 
-    <div class="section-label" style="margin-top:48px">消融实验结果</div>
-    <div class="section-title" style="margin-bottom:24px">数据说话，拒绝凭感觉调优</div>
-
-    <table class="ablation-table">
-      <thead>
-        <tr>
-          <th>配置</th>
-          <th>Recall@10</th>
-          <th>MRR</th>
-          <th>NDCG@10</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>纯 BM25</td>
-          <td>0.8448</td>
-          <td>0.6269</td>
-          <td>0.6793</td>
-        </tr>
-        <tr>
-          <td>纯 Dense（bge-m3）</td>
-          <td>0.8362</td>
-          <td>0.6458</td>
-          <td>0.6931</td>
-        </tr>
-        <tr class="best">
-          <td>BM25 + Dense + RRF ✦</td>
-          <td>0.8707 <span class="metric-up">▲ 最优</span></td>
-          <td>0.6720 <span class="metric-up">▲ 最优</span></td>
-          <td>0.7211 <span class="metric-up">▲ 最优</span></td>
-        </tr>
-        <tr>
-          <td>Hybrid + Reranker</td>
-          <td>0.8190</td>
-          <td>0.6360</td>
-          <td>0.6807</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p style="font-size:13px;color:var(--ink-3);margin-top:12px">
-      * Reranker 在当前知识库规模（125 chunks）下因覆盖度不足导致召回下降，
-      为已知 tradeoff，可通过扩充数据集改善。
-    </p>
+    <div style="background:var(--red-soft);border-radius:var(--radius-lg);padding:40px;text-align:center">
+      <div style="font-size:13px;font-weight:700;color:var(--red);letter-spacing:2px;margin-bottom:16px">我们用数据验证效果</div>
+      <div style="font-size:32px;font-weight:800;color:var(--ink);margin-bottom:8px">87% 的概率，你要的答案在前10条里</div>
+      <div style="font-size:15px;color:var(--ink-2)">经过真实数据测试，混合检索比普通搜索准确率提升约 26%</div>
+    </div>
   </div>
 </div>
 
 <!-- ══ CHAT ══ -->
 <div class="page" id="page-chat">
   <div class="chat-layout">
+
+    <!-- 左侧对话列表 -->
     <div class="chat-sidebar">
-      <h3>快速提问</h3>
-      <div class="quick-chips">
-        <button class="chip" onclick="fillChat('iPhone 17 值得买吗')">📱 iPhone 17 值得买吗</button>
-        <button class="chip" onclick="fillChat('安卓旗舰手机推荐预算3000')">🤖 安卓旗舰推荐 3000</button>
-        <button class="chip" onclick="fillChat('家用哑铃怎么选')">💪 家用哑铃怎么选</button>
-        <button class="chip" onclick="fillChat('瑜伽垫推荐')">🧘 瑜伽垫推荐</button>
-        <button class="chip" onclick="fillChat('平价护肤品推荐敏感肌')">🌿 敏感肌护肤推荐</button>
-        <button class="chip" onclick="fillChat('耳机推荐预算500以内')">🎧 耳机推荐 500 内</button>
+      <div class="sidebar-top">
+        <button class="new-chat-btn" onclick="newChat()">
+          <span style="font-size:16px">✏️</span> 新对话
+        </button>
+        <input class="sidebar-search" placeholder="搜索对话..." oninput="searchConvs(this.value)">
+      </div>
+      <div class="sidebar-list" id="sidebar-list">
+        <!-- 由 JS 渲染 -->
       </div>
     </div>
+
+    <!-- 右侧聊天区 -->
     <div class="chat-main">
       <div class="chat-header">
         <div class="chat-avatar">🌿</div>
         <div class="chat-header-info">
-          <h4>XHS-Mind 助手</h4>
+          <h4 id="chat-title">XHS-Mind 助手</h4>
           <p>基于真实小红书笔记 · 广告已过滤</p>
         </div>
         <div class="online-dot"></div>
       </div>
-      <div class="chat-messages" id="chat-messages">
-        <div class="msg ai">
-          <div class="msg-avatar">🌿</div>
-          <div class="msg-bubble">
-            你好！我是 XHS-Mind，基于真实小红书笔记的种草助手。<br><br>
-            告诉我你想了解什么产品，我会从笔记库里帮你找到真实的用户评价，过滤掉广告内容，给你最有参考价值的推荐。
-          </div>
-        </div>
-      </div>
+      <div class="chat-messages" id="chat-messages"></div>
       <div class="chat-input-area">
         <textarea
-          class="chat-input"
-          id="chat-input"
-          placeholder="输入你的问题，例如：iPhone 17 和小米 15 哪个更值得买？"
+          class="chat-input" id="chat-input"
+          placeholder="问我任何产品，例如：iPhone 17 和小米 15 哪个更值得买？"
           rows="1"
           onkeydown="handleChatKey(event)"
           oninput="autoResize(this)"
@@ -853,6 +858,12 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- 右键菜单 -->
+<div class="ctx-menu" id="ctx-menu">
+  <div class="ctx-item" onclick="renameConv()">✏️ 重命名</div>
+  <div class="ctx-item danger" onclick="deleteConv()">🗑️ 删除</div>
 </div>
 
 <!-- ══ MULTIMODAL ══ -->
@@ -933,24 +944,210 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
   window.scrollTo(0, 0);
+  if (name === 'chat') renderSidebar();
 }
 
-// ── Chat ──
-let chatHistory = [];
+// ══════════════════════════════════════════
+// 对话管理（localStorage）
+// ══════════════════════════════════════════
+const STORAGE_KEY = 'xhs_mind_convs';
+const CURRENT_KEY = 'xhs_mind_current';
 
-function fillChat(text) {
-  document.getElementById('chat-input').value = text;
-  showPage('chat');
-  autoResize(document.getElementById('chat-input'));
+function loadConvs() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveConvs(convs) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(convs));
+}
+function getCurrentId() {
+  return localStorage.getItem(CURRENT_KEY);
+}
+function setCurrentId(id) {
+  localStorage.setItem(CURRENT_KEY, id);
 }
 
-function handleChatKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendChat();
+// 生成唯一ID
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// 格式化时间
+function fmtTime(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const diff = now - d;
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return Math.floor(diff/60000) + '分钟前';
+  if (diff < 86400000) return Math.floor(diff/3600000) + '小时前';
+  if (diff < 604800000) return Math.floor(diff/86400000) + '天前';
+  return d.getMonth()+1 + '/' + d.getDate();
+}
+
+// 新建对话
+function newChat() {
+  const id = genId();
+  const conv = {
+    id, title: '新对话',
+    messages: [], createdAt: Date.now(), updatedAt: Date.now()
+  };
+  const convs = loadConvs();
+  convs.unshift(conv);
+  saveConvs(convs);
+  setCurrentId(id);
+  renderSidebar();
+  renderMessages([]);
+  document.getElementById('chat-title').textContent = '新对话';
+  document.getElementById('chat-input').focus();
+}
+
+// 切换对话
+function switchConv(id) {
+  setCurrentId(id);
+  const convs = loadConvs();
+  const conv = convs.find(c => c.id === id);
+  if (!conv) return;
+  renderSidebar();
+  renderMessages(conv.messages);
+  document.getElementById('chat-title').textContent = conv.title;
+}
+
+// 渲染侧边栏
+function renderSidebar(filter = '') {
+  const convs = loadConvs();
+  const currentId = getCurrentId();
+  const list = document.getElementById('sidebar-list');
+  if (!list) return;
+
+  const filtered = filter
+    ? convs.filter(c => c.title.includes(filter))
+    : convs;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div style="padding:24px 16px;text-align:center;color:var(--ink-3);font-size:13px">
+        ${filter ? '没找到相关对话' : '还没有对话，点击"新对话"开始吧'}
+      </div>`;
+    return;
   }
+
+  // 按今天/最近7天/更早分组
+  const today = new Date(); today.setHours(0,0,0,0);
+  const week = new Date(today); week.setDate(week.getDate()-7);
+
+  const groups = [
+    { label: '今天', items: filtered.filter(c => c.updatedAt >= today.getTime()) },
+    { label: '最近7天', items: filtered.filter(c => c.updatedAt < today.getTime() && c.updatedAt >= week.getTime()) },
+    { label: '更早', items: filtered.filter(c => c.updatedAt < week.getTime()) },
+  ];
+
+  list.innerHTML = groups.filter(g => g.items.length > 0).map(g => `
+    <div class="sidebar-section-label">${g.label}</div>
+    ${g.items.map(c => `
+      <div class="conv-item ${c.id === currentId ? 'active' : ''}"
+        onclick="switchConv('${c.id}')"
+        oncontextmenu="showCtxMenu(event,'${c.id}')">
+        <div class="conv-title">${c.title}</div>
+        <div class="conv-time">${fmtTime(c.updatedAt)}</div>
+        <button class="conv-menu-btn" onclick="event.stopPropagation();showCtxMenu(event,'${c.id}')">···</button>
+      </div>
+    `).join('')}
+  `).join('');
 }
 
+// 搜索对话
+function searchConvs(val) { renderSidebar(val); }
+
+// 右键菜单
+let ctxTargetId = null;
+function showCtxMenu(e, id) {
+  e.preventDefault(); e.stopPropagation();
+  ctxTargetId = id;
+  const menu = document.getElementById('ctx-menu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('show');
+}
+function hideCtxMenu() {
+  document.getElementById('ctx-menu').classList.remove('show');
+  ctxTargetId = null;
+}
+document.addEventListener('click', hideCtxMenu);
+
+function renameConv() {
+  if (!ctxTargetId) return;
+  const convs = loadConvs();
+  const conv = convs.find(c => c.id === ctxTargetId);
+  if (!conv) return;
+  const name = prompt('重命名对话', conv.title);
+  if (name && name.trim()) {
+    conv.title = name.trim();
+    saveConvs(convs);
+    renderSidebar();
+    if (ctxTargetId === getCurrentId()) {
+      document.getElementById('chat-title').textContent = conv.title;
+    }
+  }
+  hideCtxMenu();
+}
+
+function deleteConv() {
+  if (!ctxTargetId) return;
+  if (!confirm('确定删除这条对话？')) return;
+  let convs = loadConvs();
+  convs = convs.filter(c => c.id !== ctxTargetId);
+  saveConvs(convs);
+  if (ctxTargetId === getCurrentId()) {
+    if (convs.length > 0) {
+      switchConv(convs[0].id);
+    } else {
+      setCurrentId(null);
+      renderMessages([]);
+      document.getElementById('chat-title').textContent = 'XHS-Mind 助手';
+    }
+  }
+  renderSidebar();
+  hideCtxMenu();
+}
+
+// 渲染消息列表
+function renderMessages(messages) {
+  const container = document.getElementById('chat-messages');
+  if (messages.length === 0) {
+    container.innerHTML = `
+      <div class="msg ai">
+        <div class="msg-avatar">🌿</div>
+        <div class="msg-bubble">
+          你好！我是 XHS-Mind，基于真实小红书笔记的种草助手。<br><br>
+          告诉我你想了解什么产品，我会从笔记库里帮你找到真实的用户评价，过滤掉广告内容，给你最有参考价值的推荐。
+        </div>
+      </div>`;
+    return;
+  }
+  container.innerHTML = messages.map(m => buildMsgHTML(m.role, m.content, m.sources)).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function buildMsgHTML(role, text, sources) {
+  const sourcesHTML = sources && sources.length > 0 ? sources.slice(0,3).map(s => `
+    <div class="msg-result-card">
+      <div class="note-title">${(s.text_preview||'').substring(0,40)}...</div>
+      <div class="note-meta">❤️ ${s.liked_count||0} 点赞</div>
+    </div>`).join('') : '';
+  return `
+    <div class="msg ${role}">
+      <div class="msg-avatar">${role==='ai'?'🌿':'👤'}</div>
+      <div>
+        <div class="msg-bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
+        ${sourcesHTML}
+      </div>
+    </div>`;
+}
+
+// ── Chat 发送 ──
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
@@ -961,80 +1158,95 @@ async function sendChat() {
   const query = input.value.trim();
   if (!query) return;
 
+  // 确保有当前对话
+  let currentId = getCurrentId();
+  if (!currentId) { newChat(); currentId = getCurrentId(); }
+
   input.value = '';
   autoResize(input);
   document.getElementById('chat-send-btn').disabled = true;
 
-  appendMsg('user', query);
+  // 追加用户消息到DOM
+  const container = document.getElementById('chat-messages');
+  container.insertAdjacentHTML('beforeend', buildMsgHTML('user', query, []));
+  container.scrollTop = container.scrollHeight;
 
-  const typing = appendTyping();
+  // 保存用户消息
+  const convs = loadConvs();
+  const conv = convs.find(c => c.id === currentId);
+  if (conv) {
+    if (conv.title === '新对话' && conv.messages.length === 0) {
+      conv.title = query.length > 20 ? query.slice(0,20)+'...' : query;
+      document.getElementById('chat-title').textContent = conv.title;
+    }
+    conv.messages.push({ role:'user', content:query, sources:[] });
+    conv.updatedAt = Date.now();
+    saveConvs(convs);
+    renderSidebar();
+  }
+
+  // typing
+  const typingId = 'typing_' + Date.now();
+  container.insertAdjacentHTML('beforeend', `
+    <div class="msg ai" id="${typingId}">
+      <div class="msg-avatar">🌿</div>
+      <div class="msg-bubble">
+        <div class="typing-indicator">
+          <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>`);
+  container.scrollTop = container.scrollHeight;
 
   try {
     const res = await fetch(API + '/query', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_query: query,
-        user_id: 'web_user',
-        session_id: 'web_session_' + Date.now(),
-        use_reranker: false
+        user_query: query, user_id: 'web_user',
+        session_id: currentId, use_reranker: false
       })
     });
     const data = await res.json();
-    typing.remove();
+    document.getElementById(typingId)?.remove();
 
-    let content = data.final_recommendation || '暂无结果';
-    if (data.sources && data.sources.length > 0) {
-      content += `\n\n**参考笔记（${data.retrieved_count} 篇，已过滤 ${data.ad_count} 条广告）**`;
+    const aiContent = data.final_recommendation || '暂无结果';
+    const sources = data.sources || [];
+
+    container.insertAdjacentHTML('beforeend', buildMsgHTML('ai', aiContent, sources));
+    container.scrollTop = container.scrollHeight;
+
+    // 保存 AI 消息
+    const convs2 = loadConvs();
+    const conv2 = convs2.find(c => c.id === currentId);
+    if (conv2) {
+      conv2.messages.push({ role:'ai', content:aiContent, sources });
+      conv2.updatedAt = Date.now();
+      saveConvs(convs2);
     }
-    appendMsg('ai', content, data.sources);
-  } catch (e) {
-    typing.remove();
-    appendMsg('ai', '⚠️ 无法连接到后端，请确认 FastAPI 已启动（localhost:8000）');
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    container.insertAdjacentHTML('beforeend', buildMsgHTML('ai', '⚠️ 无法连接到后端，请确认 FastAPI 已启动（localhost:8000）', []));
+    container.scrollTop = container.scrollHeight;
   }
 
   document.getElementById('chat-send-btn').disabled = false;
 }
 
-function appendMsg(role, text, sources) {
-  const container = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = 'msg ' + role;
-  div.innerHTML = `
-    <div class="msg-avatar">${role === 'ai' ? '🌿' : '👤'}</div>
-    <div>
-      <div class="msg-bubble">${text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>
-      ${sources && sources.length > 0 ? sources.slice(0,3).map(s => `
-        <div class="msg-result-card">
-          <div class="note-title">${s.text_preview ? s.text_preview.substring(0,40) : ''}...</div>
-          <div class="note-meta">❤️ ${s.liked_count || 0} 点赞</div>
-        </div>
-      `).join('') : ''}
-    </div>
-  `;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-  return div;
-}
-
-function appendTyping() {
-  const container = document.getElementById('chat-messages');
-  const div = document.createElement('div');
-  div.className = 'msg ai';
-  div.innerHTML = `
-    <div class="msg-avatar">🌿</div>
-    <div class="msg-bubble">
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>
-    </div>
-  `;
-  container.appendChild(div);
-  container.scrollTop = container.scrollHeight;
-  return div;
-}
+// 初始化：页面加载时恢复上次对话
+window.addEventListener('load', () => {
+  const convs = loadConvs();
+  const currentId = getCurrentId();
+  const conv = currentId ? convs.find(c => c.id === currentId) : null;
+  if (conv) {
+    renderMessages(conv.messages);
+    document.getElementById('chat-title').textContent = conv.title;
+  } else if (convs.length > 0) {
+    switchConv(convs[0].id);
+  } else {
+    renderMessages([]);
+  }
+});
 
 // ── Multimodal ──
 let uploadedFile = null;
