@@ -28,3 +28,7 @@ logs/
 
 # 测试缓存
 .pytest_cache/
+
+data/bm25_index.pkl
+data/milvus_lite.db/
+data/*.pkl
